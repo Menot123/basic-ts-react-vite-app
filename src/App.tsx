@@ -3,6 +3,7 @@ import './App.css';
 
 const App: React.FC = () => {
   const apiUrl: string = import.meta.env.VITE_API_URL as string;
+  // const apiUrlJsonServer: string = import.meta.env.VITE_API_JSON_SERVER as string;
   const [posts, setPosts] = useState<any[]>([]);
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(8);
