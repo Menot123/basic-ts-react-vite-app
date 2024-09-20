@@ -1,29 +1,22 @@
-import "./PostsTable.css";
-
-import { apiURL } from "../api/apiURL";
 import AddPost from "./AddPost";
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Post } from "../types/Post";
 import {
     Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    TablePagination,
-    Box,
-    CircularProgress,
     Typography,
-    IconButton,
-} from "@mui/material";
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+    Button,
+    Space,
+    Modal,
+    Pagination,
+    Spin,
+} from "antd";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import EditPost from "./EditPost";
 import { postsQueryKey } from "../queryKeys/queryKeys";
+
+const apiURL: string = import.meta.env.VITE_API_URL as string;
 
 const delay = (ms: number) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -40,8 +33,8 @@ const deletePost = async (postId: number) => {
 };
 
 const PostsTable: React.FC = () => {
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [page, setPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [editingPost, setEditingPost] = useState<Post | null>(null);
 
     const queryClient = useQueryClient();
@@ -51,8 +44,8 @@ const PostsTable: React.FC = () => {
         queryFn: () => delay(1000).then(() => fetchPosts())
     });
 
-    const startIndex = page * rowsPerPage;
-    const endIndex = page * rowsPerPage + rowsPerPage;
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
     const currentPosts = posts.slice(startIndex, endIndex);
 
     const mutationDelete = useMutation({
@@ -64,9 +57,12 @@ const PostsTable: React.FC = () => {
     });
 
     const handleDelete = (postId: number) => {
-        if (window.confirm('Are you sure to delete this post?')) {
-            mutationDelete.mutate(postId);
-        }
+        Modal.confirm({
+            title: 'Are you sure to delete this post?',
+            onOk() {
+                mutationDelete.mutate(postId);
+            },
+        });
     };
 
     const handleEdit = (post: Post) => {
@@ -77,86 +73,106 @@ const PostsTable: React.FC = () => {
         setEditingPost(null);
     };
 
-    const handleChangePage = (
-        _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
-        newPage: number
-    ) => {
-        setPage(newPage);
+    const handleChangePage = (page: number) => {
+        setPage(page);
     };
 
-    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
+    const handleChangeRowsPerPage = (value: number) => {
+        setRowsPerPage(value);
+        setPage(1);
     };
 
     if (isLoading) return (
-        <Box display="flex" justifyContent="center" alignItems="center">
-            <CircularProgress size={20} />
-            <Box component="h3" ml={2}>Loading...</Box>
-        </Box>
-    )
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Spin size="large" />
+            <Typography.Title level={3} style={{ marginLeft: 16 }}>Loading...</Typography.Title>
+        </div>
+    );
 
     if (isError) return (
-        <Typography color="error">Error fetching posts: {error.message}</Typography>
-    )
+        <Typography.Text type="danger">Error fetching posts: {error.message}</Typography.Text>
+    );
+
+    const columns = [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 80,
+        },
+        {
+            title: 'User ID',
+            dataIndex: 'userId',
+            key: 'userId',
+            width: 80,
+        },
+        {
+            title: 'Title',
+            dataIndex: 'title',
+            key: 'title',
+        },
+        {
+            title: 'Body',
+            dataIndex: 'body',
+            key: 'body',
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            width: 120,
+            render: (_text: string, post: Post) => (
+                <Space size="middle">
+                    <Button type="primary"
+
+                        icon={<EditOutlined />}
+                        onClick={() => handleEdit(post)}
+                    />
+                    <Button type="primary"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDelete(post.id)}
+                    />
+                </Space>
+            ),
+        },
+    ];
 
     return (
-        <Paper>
-            <Box p={2}>
-                <AddPost />
-            </Box>
+        <Fragment>
+
+            <AddPost />
 
             {editingPost && (
                 <EditPost post={editingPost} onClose={handleCloseEdit} />
             )}
 
-            <Typography variant="h4" align="center" sx={{ mb: 2 }}>Posts Table</Typography>
-            <TableContainer sx={{ maxHeight: 600 }}>
-                <Table stickyHeader>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell className="header-cell" >ID</TableCell>
-                            <TableCell className="header-cell" sx={{ width: 60 }}>
-                                User ID
-                            </TableCell>
-                            <TableCell className="header-cell">Title</TableCell>
-                            <TableCell className="header-cell">Body</TableCell>
-                            <TableCell className="header-cell">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {currentPosts.map((post) => (
-                            <TableRow key={post.id} className="table-row">
-                                <TableCell>{post.id}</TableCell>
-                                <TableCell>{post.userId}</TableCell>
-                                <TableCell>{post.title}</TableCell>
-                                <TableCell>{post.body}</TableCell>
-                                <TableCell sx={{ display: "flex", alignItems: "center" }}>
-                                    <IconButton color="primary" onClick={() => handleEdit(post)}>
-                                        <EditIcon />
-                                    </IconButton>
-                                    <IconButton color="error" onClick={() => handleDelete(post.id)}>
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <Typography.Title
+                level={3}
+                style={{ textAlign: 'center', marginBottom: '16px' }}
+            >Posts Table</Typography.Title>
 
-            <TablePagination
-                rowsPerPageOptions={[5, 10, 20, { label: "All", value: posts.length }]}
-                component="div"
-                count={posts.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                showFirstButton
-                showLastButton
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
+            <Table
+                dataSource={currentPosts}
+                columns={columns}
+                pagination={false}
+                scroll={{ y: 320 }}
+                rowKey="id"
             />
-        </Paper>
+
+            <Pagination
+                style={{ marginTop: '16px', textAlign: 'right', padding: '16px' }}
+                current={page}
+                total={posts.length}
+                pageSize={rowsPerPage}
+                showQuickJumper
+                showSizeChanger
+                onShowSizeChange={(_current, size) => handleChangeRowsPerPage(size)}
+                onChange={handleChangePage}
+                pageSizeOptions={['5', '10', '20', `${posts.length}`]}
+
+            />
+
+        </Fragment>
     );
 };
 

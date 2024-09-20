@@ -1,15 +1,17 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    Box,
+    Form,
+    Input,
+    InputNumber,
     Button,
-    TextField,
     Typography,
-} from "@mui/material";
+} from "antd";
 import { NewPost } from "../types/NewPost";
-import { apiURL } from "../api/apiURL";
 import { postsQueryKey } from "../queryKeys/queryKeys";
+
+const apiURL: string = import.meta.env.VITE_API_URL as string;
 
 const addPost = async (newPost: NewPost) => {
     const response = await axios.post(`${apiURL}/posts`, newPost);
@@ -17,10 +19,7 @@ const addPost = async (newPost: NewPost) => {
 };
 
 const AddPost: React.FC = () => {
-    const [title, setTitle] = useState("");
-    const [body, setBody] = useState("");
-    const [userId, setUserId] = useState("");
-
+    const [form] = Form.useForm();
     const queryClient = useQueryClient();
     const firstInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,61 +27,64 @@ const AddPost: React.FC = () => {
         mutationFn: addPost,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: postsQueryKey });
-
-            // Làm mới form thêm dữ liệu và focus vào dòng đầu của form
-            setTitle("");
-            setBody("");
-            setUserId("");
+            form.resetFields();
             if (firstInputRef.current) {
                 firstInputRef.current.focus();
             }
-
-            alert(`Post added successfully!`);
+            window.alert(`Post added successfully!`);
         },
     });
 
-    const handleSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-
-        // Gửi dữ liệu newPost lên server
-        mutation.mutate({
-            title,
-            body,
-            userId: Number(userId),
-        });
+    const handleSubmit = (values: { title: string; body: string; userId: number }) => {
+        mutation.mutate(values);
     };
 
     return (
-        <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}
+        <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            style={{ marginBottom: 32 }}
         >
-            <Typography variant="h6">Add New Post</Typography>
-            <TextField
+            <Typography.Title
+                level={3}
+                style={{ textAlign: 'center', marginBottom: '16px' }}
+            >Add New Post</Typography.Title>
+            <Form.Item
+                name="userId"
                 label="User ID"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                type="number"
-                required
-                inputRef={firstInputRef}
-            />
-            <TextField
+                rules={[{ required: true, message: "Please input the User ID!" }]}
+            >
+                <InputNumber
+                    ref={firstInputRef}
+                    style={{ width: "100%" }}
+                />
+            </Form.Item>
+            <Form.Item
+                name="title"
                 label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-            />
-            <TextField
+                rules={[{ required: true, message: "Please input the Title!" }]}
+            >
+                <Input />
+            </Form.Item>
+            <Form.Item
+                name="body"
                 label="Body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                required
-            />
-            <Button variant="contained" color="primary" type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Adding..." : "Add Post"}
-            </Button>
-        </Box>
+                rules={[{ required: true, message: "Please input the Body!" }]}
+            >
+                <Input.TextArea />
+            </Form.Item>
+            <Form.Item>
+                <Button
+                    type="primary"
+                    htmlType="submit"
+                    block
+                    loading={mutation.isPending}
+                >
+                    {mutation.isPending ? "Adding..." : "Add Post"}
+                </Button>
+            </Form.Item>
+        </Form>
     );
 };
 
