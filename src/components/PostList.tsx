@@ -46,22 +46,22 @@ const PostList: React.FC = () => {
                         <table className="table table-bordered table-hover">
                             <thead>
                                 <tr>
-                                    <td>User ID</td>
                                     <td>Post ID</td>
                                     <td>Title</td>
                                     <td>Body</td>
-                                    <td>Edit</td>
+                                    <td>Action</td>
                                 </tr>
                             </thead>
                             <tbody>
                                 {currentPosts.map(post => (
                                     <tr key={post.id}>
-                                        <td>{post.userId}</td>
                                         <td>{post.id}</td>
                                         <td>{post.title}</td>
                                         <td>{post.body}</td>
-                                        <td>
+                                        <td className='action'>
                                             <Link to={`${originalPath}/edit/${post.id}`} className="btn btn-warning">Edit</Link>
+                                            <p style={{ paddingLeft: 5, paddingRight: 5 }}>|</p>
+                                            <a className="btn btn-danger">Delete</a>
                                         </td>
                                     </tr>
                                 ))}

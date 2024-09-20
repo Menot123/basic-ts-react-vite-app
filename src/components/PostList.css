@@ -3,6 +3,27 @@ h2 {
     padding: 20px 0;
 }
 
+.action {
+    display: flex;
+    border: 0px solid black !important;
+    align-items: center;
+}
+
+.btn {
+    display: inline-block;
+    padding: 5px 10px 5px 10px;
+    background-color: #007bff;
+    color: #ffffff;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
 .table-responsive {
     display: flex;
     justify-content: center;
